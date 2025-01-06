@@ -1,4 +1,5 @@
 use actix_web::{Web, App, HttpServer, Responder, HttpResponse};
+use actix_web::middleware::cors::Cors;
 use actix_cors::Cors;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
@@ -80,19 +81,42 @@ async fn delete_todo(path: web::Path<Uuid>, data: web::Data<AppState>) -> impl R
     }
 }
 
-#[actix_web::main]
+// #[actix_web::main]
+// async fn main() -> std::io::Result<()> {
+//     let app_state = web::Data::new(AppState {
+//          todo_list: Mutex::new(Vec::new()),
+//     });
+
+//     HttpServer::new(move||{
+//         let cors = Cors::default()
+//         .allow_any_origin()
+//         .allow_any_method()
+//         .allow_any_header()
+//         .max_age(3600);
+    
+//     App::new().app_data(app_state.clone()).warp(cors).route("/todos", web::get().to(get_todos)
+//     })
+
+// };
+
 async fn main() -> std::io::Result<()> {
-    let app_state = web::Date::new(AppState {
+    let app_state = web::Data::new(AppState {
+        todo_list: Mutex::new(Vec::new()),
+    });
 
-        todo_list: Mutex::new(Vec::new())
-    )}
-    HttpServer::new(||{
-        let cors = Cors::default().allow_any_origin()
-        .allow_any_method()
-        .allow_any_header()
-        .max_age(3600)
+    HttpServer::new(move || {
+        let cors = Cors::default()
+            .allow_any_origin()
+            .allow_any_method()
+            .allow_any_header()
+            .max_age(3600);
+
+        App::new()
+            .app_data(app_state.clone()) // Correctly register app state
+            .wrap(cors)                  // Correctly wrap the application with CORS middleware
+            .route("/todos", web::get().to(get_todos)) // Define a route
     })
-
-    App::new(app_data(app_state.clone()).warp(cors).route("/todos", web::get().to(get_todos())
-))
-};
+    .bind(("127.0.0.1", 8080))? // Bind the server to an address and port
+    .run()
+    .await
+}
