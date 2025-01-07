@@ -1,5 +1,4 @@
-use actix_web::{Web, App, HttpServer, Responder, HttpResponse};
-use actix_web::middleware::cors::Cors;
+use actix_web::{web, App, HttpResponse, HttpServer, Responder};
 use actix_cors::Cors;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
@@ -32,10 +31,10 @@ struct AppState{
 
 async fn get_todos(data: web::Data<AppState>) ->  impl Responder{
     let todos = data.todo_list.lock().unwrap();
-    HttpResponse::Ok().json(todos)
+    HttpResponse::Ok().json(&*todos)
 }
 
-async fn create_todo(data: web::Data<AppState>, item: web::Json<CreateTodoItem>) -> impl Responder {
+async fn add_todo(data: web::Data<AppState>, item: web::Json<CreateTodoItem>) -> impl Responder {
     let mut todos = data.todo_list.lock().unwrap();
     // let new_id = Uuid::new_v4();
     let new_todo = TodoItem {
@@ -74,49 +73,32 @@ async fn delete_todo(path: web::Path<Uuid>, data: web::Data<AppState>) -> impl R
     let mut todos = data.todo_list.lock().unwrap();
  
     if todos.iter().any(|todo| todo.id == *path) {
-        todos.remove(index);
+        todos.retain(|todo|todo.id == *path);
         HttpResponse::Ok().json(&*todos)
     } else {
         HttpResponse::NotFound().body("Todo not found")
     }
 }
 
-// #[actix_web::main]
-// async fn main() -> std::io::Result<()> {
-//     let app_state = web::Data::new(AppState {
-//          todo_list: Mutex::new(Vec::new()),
-//     });
-
-//     HttpServer::new(move||{
-//         let cors = Cors::default()
-//         .allow_any_origin()
-//         .allow_any_method()
-//         .allow_any_header()
-//         .max_age(3600);
-    
-//     App::new().app_data(app_state.clone()).warp(cors).route("/todos", web::get().to(get_todos)
-//     })
-
-// };
-
+#[actix_web::main]
 async fn main() -> std::io::Result<()> {
     let app_state = web::Data::new(AppState {
-        todo_list: Mutex::new(Vec::new()),
+         todo_list: Mutex::new(Vec::new()),
     });
 
-    HttpServer::new(move || {
+    HttpServer::new(move||{
         let cors = Cors::default()
-            .allow_any_origin()
-            .allow_any_method()
-            .allow_any_header()
-            .max_age(3600);
+        .allow_any_origin()
+        .allow_any_method()
+        .allow_any_header()
+        .max_age(3600);
 
-        App::new()
-            .app_data(app_state.clone()) // Correctly register app state
-            .wrap(cors)                  // Correctly wrap the application with CORS middleware
-            .route("/todos", web::get().to(get_todos)) // Define a route
+     App::new()
+     .app_data(app_state.clone())
+     .wrap(cors).route("/todos", web::get().to(get_todos))
+     .route("/todos", web::post().to(add_todo))
+     .route("/todos/{id}", web::put().to(update_todo))
+     .route("/todos/{id}", web::delete().to(delete_todo))
     })
-    .bind(("127.0.0.1", 8080))? // Bind the server to an address and port
-    .run()
-    .await
+    .bind("127.0.0.1:8080") ? .run().await
 }
