@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { MdDelete, MdEdit, MdConfirmationNumber } from "react-icons/md";
 import axios from "axios";
 import { format } from "date-fns";
@@ -11,6 +11,20 @@ const index = () => {
   const [editIndex, setEditIndex] = useState(-1);
   const [searchInput, setSearchInput] = useState("");
   const [searchResults, setSearchResult] = useState([]);
+
+  // State Managment
+  const [count, setCount] = useState(0);
+  const [search, setSearch] = useState("");
+  const [searchItem, setSearchItem] = useState(search);
+
+  useEffect(() => {
+    // fetchTodos()
+  }, [count]);
+
+  const editTodo = (index) => {
+    setTodoInput(todos[index].title);
+    setEditIndex(index);
+  };
 
   return <div>index</div>;
 };
