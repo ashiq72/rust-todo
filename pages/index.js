@@ -36,6 +36,24 @@ const index = () => {
     }
   };
 
+
+  const addTodos = async () => {
+    try {
+      if (editIndex === -1) {
+        // Add new todo
+        const response = await axios.get("http://127.0.0.1:8080/todos"){
+          title: todoInput,
+          completed: false,
+        }
+
+      }
+      setTodos(response.data);
+      setTodosCopy(response.data);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
   return <div>index</div>;
 };
 
